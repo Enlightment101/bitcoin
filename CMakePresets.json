@@ -20,7 +20,7 @@
       }
     },
     {
-      "name": "vs2022-static",
+      "name": "vs2022-x64-static",
       "displayName": "Build using 'Visual Studio 17 2022' generator and 'x64-windows-static' triplet",
       "condition": {
         "type": "equals",
@@ -32,6 +32,57 @@
       "toolchainFile": "$env{VCPKG_ROOT}\\scripts\\buildsystems\\vcpkg.cmake",
       "cacheVariables": {
         "VCPKG_TARGET_TRIPLET": "x64-windows-static",
+        "BUILD_GUI": "ON",
+        "WITH_QRENCODE": "OFF"
+      }
+    },
+    {
+      "name": "vs2022-x86-static",
+      "displayName": "Build using 'Visual Studio 17 2022' generator and 'x86-windows-static' triplet",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x86",
+      "toolchainFile": "$env{VCPKG_ROOT}\\scripts\\buildsystems\\vcpkg.cmake",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "x86-windows-static",
+        "BUILD_GUI": "ON",
+        "WITH_QRENCODE": "OFF"
+      }
+    },
+    {
+      "name": "vs2022-arm-static",
+      "displayName": "Build using 'Visual Studio 17 2022' generator and 'arm-windows-static' triplet",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "generator": "Visual Studio 17 2022",
+      "architecture": "arm",
+      "toolchainFile": "$env{VCPKG_ROOT}\\scripts\\buildsystems\\vcpkg.cmake",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "arm-windows-static",
+        "BUILD_GUI": "ON",
+        "WITH_QRENCODE": "OFF"
+      }
+    },
+    {
+      "name": "vs2022-arm64-static",
+      "displayName": "Build using 'Visual Studio 17 2022' generator and 'arm64-windows-static' triplet",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "generator": "Visual Studio 17 2022",
+      "architecture": "arm64",
+      "toolchainFile": "$env{VCPKG_ROOT}\\scripts\\buildsystems\\vcpkg.cmake",
+      "cacheVariables": {
+        "VCPKG_TARGET_TRIPLET": "arm64-windows-static",
         "BUILD_GUI": "ON",
         "WITH_QRENCODE": "OFF"
       }
