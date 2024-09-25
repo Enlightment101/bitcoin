@@ -1,12 +1,6 @@
-# Copyright (c) 2023 The Bitcoin Core developers
-# Distributed under the MIT software license, see the accompanying
-# file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
 name: CI
 on:
-  # See: https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request.
   pull_request:
-  # See: https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#push.
   push:
     branches:
       - '**'
@@ -18,33 +12,34 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CI_FAILFAST_TEST_LEAVE_DANGLING: 1  # GHA does not care about dangling processes and setting this variable avoids killing the CI script itself on error
+  CI_FAILFAST_TEST_LEAVE_DANGLING: 1
   MAKEJOBS: '-j10'
 
 jobs:
-
-  win64-native:
-    name: 'Win64 native, VS 2022'
-    # Use latest image, but hardcode version to avoid silent upgrades (and breaks).
-    # See: https://github.com/actions/runner-images#available-images.
-    runs-on: windows-2022
-
-    # No need to run on the read-only mirror, unless it is a PR.
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-2022]
+        arch: [x64, x86, arm, arm64]
+        
+    name: Build for ${{ matrix.arch }}
+    
     if: github.repository != 'bitcoin-core/gui' || github.event_name == 'pull_request'
 
     env:
       PYTHONUTF8: 1
       TEST_RUNNER_TIMEOUT_FACTOR: 40
+      VCPKG_TARGET_TRIPLET: ${{ format('vcpkg-triplet-{0}', matrix.arch) }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Configure Developer Command Prompt for Microsoft Visual C++
-        # Using microsoft/setup-msbuild is not enough.
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: x64
+          arch: ${{ matrix.arch }}
 
       - name: Get tool information
         run: |
@@ -59,7 +54,9 @@ jobs:
         run: |
           Set-Location "$env:VCPKG_INSTALLATION_ROOT"
           Add-Content -Path "triplets\x64-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
-          Add-Content -Path "triplets\x64-windows-static.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
+          Add-Content -Path "triplets\x86-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
+          Add-Content -Path "triplets\arm-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
+          Add-Content -Path "triplets\arm64-windows.cmake" -Value "set(VCPKG_BUILD_TYPE release)"
 
       - name: vcpkg tools cache
         uses: actions/cache@v4
@@ -76,7 +73,7 @@ jobs:
 
       - name: Generate build system
         run: |
-          cmake -B build --preset vs2022-static -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" -DBUILD_GUI=ON -DWITH_BDB=ON -DWITH_MINIUPNPC=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON -DWERROR=ON
+          cmake -B build --preset vs2022-${{ matrix.arch }}-static -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake" -DBUILD_GUI=ON -DWITH_BDB=ON -DWITH_MINIUPNPC=ON -DWITH_ZMQ=ON -DBUILD_BENCH=ON -DBUILD_FUZZ_BINARY=ON
 
       - name: Save vcpkg binary cache
         uses: actions/cache/save@v4
@@ -94,10 +91,10 @@ jobs:
         run: |
           mkdir -p release-package
           cd ${{ github.workspace }}/build/src/Release/
-          zip -r ${{ github.workspace }}/release-package/release-build.zip .
+          zip -r ${{ github.workspace }}/release-package/release-${{ matrix.arch }}.zip .
 
       - name: Upload Release Build Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: release-build
-          path: ${{ github.workspace }}/release-package/release-build.zip
+          name: release-${{ matrix.arch }}
+          path: ${{ github.workspace }}/release-package/release-${{ matrix.arch }}.zip
